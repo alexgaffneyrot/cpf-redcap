@@ -20,15 +20,9 @@ cpf_data <- cpf_data %>%
     Weight = as.numeric(gsub("kg|g","",tolower(Weight))),
     `HRCP Diagnosis` = as.factor(`HRCP Diagnosis`),
     `HRCP Diagnosis Date` = as.Date(`HRCP Diagnosis Date`),
-    `CP Diagnosis Date` = as.Date(`CP Diagnosis Date`),
     `CP Diagnosis` = as.factor(`CP Diagnosis`),
-    
-
-
+    `CP Diagnosis Date` = as.Date(`CP Diagnosis Date`)
   )
-
-
-
 
 
 
