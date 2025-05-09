@@ -1,0 +1,81 @@
+---
+title: "clean-cpf-file"
+output: html_document
+---
+
+```{r libraries, include=FALSE}
+library(readxl)
+library(data.table)
+library(stringr)
+library(dplyr)
+library(plotly)
+library(ggplot2)
+```
+
+
+# Read in data
+```{r}
+
+cpf_data_2023_4 <- read_excel("/Users/AGaffney/Documents/CFP excel/CPF Study Data 2023_copy_2025_May.xlsx", sheet = "2023-24")
+cpf_data_2025 <- read_excel("/Users/AGaffney/Documents/CFP excel/CPF Study Data 2023_copy_2025_May.xlsx", sheet = "2025")
+cpf_data <- rbind(cpf_data_2023_4,cpf_data_2025)
+cpf_data <- as.data.table(cpf_data)
+str(cpf_data)
+```
+
+
+# Tidy data
+```{r}
+cpf_data <- cpf_data %>%
+  mutate(
+    Consent = as.factor(Consent),
+    `Consent Month` = factor(`Consent Month`, levels = month.abb),
+    Weight = as.numeric(gsub("kg|g","",tolower(Weight))),
+    `HRCP Diagnosis` = as.factor(`HRCP Diagnosis`),
+    `HRCP Diagnosis Date` = as.Date(`HRCP Diagnosis Date`),
+    `CP Diagnosis` = as.factor(`CP Diagnosis`),
+    `CP Diagnosis Date` = as.Date(`CP Diagnosis Date`)
+  )
+```
+
+# Problems
+```{r}
+# Consent 'Yes' but no consent month or year
+cpf_data[Consent == "Yes" & (is.na(`Consent Month`)| is.na(`Consent Year`)),]
+```
+
+```{r}
+cpf_data[Consent == "Yes" & is.na(`Study number`),]
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
