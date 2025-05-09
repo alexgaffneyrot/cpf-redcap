@@ -61,7 +61,19 @@ cpf_data[is.na(`MRN`),]
 ```
 
 ```{r}
+p <- cpf_data %>%
+  ggplot(aes(x = Weight)) +
+  geom_histogram(aes(y = ..density..), 
+                 #bins = 10, 
+                 fill = "skyblue", 
+                 color = "white") +
+  geom_density(color = "darkblue", size = 1) +
+  labs(title = "Weight Distribution", 
+       x = "Weight (kg)", 
+       y = "Density") +
+  theme_minimal()
 
+ggplotly(p)
 ```
 
 ```{r}
