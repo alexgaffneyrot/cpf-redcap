@@ -1,5 +1,7 @@
 ---
-title: "clean-cpf-file"
+title: "monthly-site-meeting"
+author: "Alex Gaffney"
+date: "2025-05-13"
 output: html_document
 ---
 
@@ -30,6 +32,7 @@ cpf_data <- cpf_data %>%
   mutate(
     Consent = as.factor(Consent),
     `Consent Month` = factor(`Consent Month`, levels = month.abb),
+    ga_weeks = as.numeric(sub("\\+.*", "", `GA at birth`)),
     Weight = as.numeric(gsub("kg|g","",tolower(Weight))),
     `HRCP Diagnosis` = as.factor(`HRCP Diagnosis`),
     `HRCP Diagnosis Date` = as.Date(`HRCP Diagnosis Date`),
@@ -37,63 +40,64 @@ cpf_data <- cpf_data %>%
     `CP Diagnosis Date` = as.Date(`CP Diagnosis Date`)
   )
 ```
-
-# Problems
+# N Eligble children born in past month
 ```{r}
-# Consent 'Yes' but no consent month or year
-cpf_data[Consent == "Yes" & (is.na(`Consent Month`)| is.na(`Consent Year`)),]
-```
+target_month <- 4
+target_year <- 2025
 
-```{r}
-# Consent 'Yes' but no study number
-cpf_data[Consent == "Yes" & is.na(`Study number`),]
-```
-
-```{r}
-# NA DOB
-cpf_data[is.na(`DOB`),]
-```
-
-```{r}
-# NA MRN
-cpf_data[is.na(`MRN`),]
+eligble <- cpf_data[year(DOB) == target_year & month(DOB) == target_month]
+nrow(eligble)
 
 ```
-
+# Eligble consent breakdown
 ```{r}
-p <- cpf_data %>%
-  ggplot(aes(x = Weight)) +
-  geom_histogram(aes(y = ..density..), 
-                 #bins = 10, 
-                 fill = "skyblue", 
-                 color = "white") +
-  geom_density(color = "darkblue", size = 1) +
-  labs(title = "Weight Distribution", 
-       x = "Weight (kg)", 
-       y = "Density") +
-  theme_minimal()
-
-ggplotly(p)
+table(eligble$Consent)
 ```
 
+# Preterm (n) born in past month
 ```{r}
-# count how many babies enrolled in 2024 - remember some don't have consent year in so check that as well
-# probably 2 more enrolled without a year in the cpf file
-count_2024 <- nrow(cpf_data[cpf_data$`Consent Year` == 2024 & !is.na(cpf_data$`Study number`), ])
-count_2024
+nrow(eligble[ga_weeks < 37])
 ```
 
+# GM writhing age performed in month
 ```{r}
+cpf_data$`GMA-Writhing age` = tolower(cpf_data$`GMA-Writhing age`)
+
+cpf_data %>%
+  filter(str_detect(`GMA-Writhing age`, "april") & year(DOB) == target_year) 
+
+# Missed?
+```
+# Visits at 3-4 months (n) in past month
+```{r}
+eligble$`Physio 3/12 date`
+```
+# GM fidgety age performed in month
+```{r}
+cpf_data$`GMA-Fidgety age` = tolower(cpf_data$`GMA-Fidgety age`)
+
+cpf_data %>%
+  filter(str_detect(`GMA-Fidgety age`, "april") & year(DOB) == target_year) 
 
 ```
-
+# Diagnosis of CP in month
 ```{r}
-
+cpf_data[year(`HRCP Diagnosis Date`) == target_year &
+           month(`HRCP Diagnosis Date`) == target_month |
+           year(`CP Diagnosis Date`) == target_year &
+           month(`CP Diagnosis Date`) == target_month]
 ```
+
 
 ```{r}
 
 ```
+
+
+```{r}
+
+```
+
 
 ```{r}
 
