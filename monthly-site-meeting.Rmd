@@ -49,14 +49,15 @@ eligble <- cpf_data[year(DOB) == target_year & month(DOB) == target_month]
 nrow(eligble)
 
 ```
-# Eligble consent breakdown
+# If relevant number declined/missed consent/enrolment
 ```{r}
-table(eligble$Consent)
+#table(eligble$Consent)
+cpf_data[`Consent Year` == "2025" & `Consent Month` == "Apr"]
 ```
 
 # Preterm (n) born in past month
 ```{r}
-nrow(eligble[ga_weeks < 37])
+nrow(eligble[ga_weeks < 32])
 ```
 
 # GM writhing age performed in month

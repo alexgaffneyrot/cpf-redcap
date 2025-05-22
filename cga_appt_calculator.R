@@ -24,8 +24,7 @@ calculate_cga <- function(dob, ga_weeks, ga_days, appointment_date) {
   cga_days <- cga_total_days %% 7
   
   # Convert to months (approx)
-  cga_months <- round(cga_total_days / 30.44, 2)  # 30.44 is average days/month
-  
+  cga_months <- round(cga_total_days / 30.44, 2)
   
   cga_weeks_days_months <- list(
       CGA_weeks_days = paste0(cga_weeks, "+", cga_days),
@@ -36,6 +35,6 @@ calculate_cga <- function(dob, ga_weeks, ga_days, appointment_date) {
 }
 
 # dob, weeks, days, appointment date
-calculate_cga("22/10/2023",35,4,"21/02/2024")
+calculate_cga("21/03/2023",35,4,"21/02/2024")
 
 
