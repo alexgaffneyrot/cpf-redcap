@@ -15,43 +15,84 @@ library(ggplot2)
 
 # Read in data
 ```{r}
-# "C:\Users\AGaffney\Documents\CPF excel\CPF Study Data 2023_copy_2025_May.xlsx"
-cpf_data_2023_4 <- read_excel("/Users/AGaffney/Documents/CPF excel/CPF Study Data 2023_copy_2025_May.xlsx", sheet = "2023-24")
-cpf_data_2025 <- read_excel("/Users/AGaffney/Documents/CPF excel/CPF Study Data 2023_copy_2025_May.xlsx", sheet = "2025")
+# "C:\Users\AGaffney\Documents\CPF excel\CPF Study Data 2023_copy_2025_XXXXXX.xlsx"
+cpf_data_2023_4 <- read_excel("/Users/AGaffney/Documents/CPF excel/CPF Study Data 2023_copy_2025_June.xlsx", sheet = "2023-24")
+cpf_data_2025 <- read_excel("/Users/AGaffney/Documents/CPF excel/CPF Study Data 2023_copy_2025_June.xlsx", sheet = "2025")
 cpf_data <- rbind(cpf_data_2023_4,cpf_data_2025)
+
 cpf_data <- as.data.table(cpf_data)
 str(cpf_data)
 ```
+# Set Names
+```{r}
+setnames(cpf_data, old = colnames(cpf_data), new = c(
+  "study_number",
+  "consent",
+  "consent_comment",
+  "consent_month",
+  "consent_year",
+  "name",
+  "dob",
+  "mrn",
+  "ga_at_birth",
+  "birth_weight",
+  "hrcp_diagnosis",
+  "hrcp_diagnosis_date",
+  "cga_hrcp_diagnosis",
+  "cp_diagnosis",
+  "cp_diagnosis_date",
+  "cga_cp_diagnosis",
+  "diagnosis_comments",
+  "crus",
+  "gma_writhing_age",
+  "gma_fidgety_age",
+  "aims_3m",
+  "hine_3m",
+  "physio_3m_date",
+  "consultant_3m_visit",
+  "hine_6m",
+  "aims_6m",
+  "physio_6m",
+  "consultant_6m",
+  "consultant_meeting_yn",
+  "physio_9m_visit",
+  "hine_9m",
+  "aims_9m",
+  "consultant_9m_visit",
+  "hine_12m",
+  "aims_12m",
+  "cdnt"
+))
 
+```
 
 # Tidy data
 ```{r}
-cpf_data <- cpf_data %>%
-  mutate(
-    Consent = as.factor(Consent),
-    `Consent Month` = factor(`Consent Month`, levels = month.abb),
-    Weight = as.numeric(gsub("kg|g","",tolower(Weight))),
-    `HRCP Diagnosis` = as.factor(`HRCP Diagnosis`),
-    `HRCP Diagnosis Date` = as.Date(`HRCP Diagnosis Date`),
-    `CP Diagnosis` = as.factor(`CP Diagnosis`),
-    `CP Diagnosis Date` = as.Date(`CP Diagnosis Date`)
-  )
+cpf_data[, `:=`(
+  consent = as.factor(consent),
+  consent_month = factor(consent_month, levels = month.abb),
+  birth_weight = as.numeric(gsub("kg|g", "", tolower(birth_weight))),
+  hrcp_diagnosis = as.factor(hrcp_diagnosis),
+  hrcp_diagnosis_date = as.Date(hrcp_diagnosis_date),
+  cp_diagnosis = as.factor(cp_diagnosis),
+  cp_diagnosis_date = as.Date(cp_diagnosis_date)
+)]
 ```
 
 # Problems
 ```{r}
 # Consent 'Yes' but no consent month or year
-cpf_data[Consent == "Yes" & (is.na(`Consent Month`)| is.na(`Consent Year`)),]
+cpf_data[consent == "Yes" & (is.na(consent_month)| is.na(consent_year)),]
 ```
 
 ```{r}
 # Consent 'Yes' but no study number
-cpf_data[Consent == "Yes" & is.na(`Study number`),]
+cpf_data[consent == "Yes" & is.na(study_number),]
 ```
 
 ```{r}
 # NA DOB
-cpf_data[is.na(`DOB`),]
+cpf_data[is.na(dob),]
 ```
 
 ```{r}
