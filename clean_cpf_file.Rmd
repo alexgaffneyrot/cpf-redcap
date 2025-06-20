@@ -21,7 +21,7 @@ cpf_data_2025 <- read_excel("/Users/AGaffney/Documents/CPF excel/CPF Study Data 
 cpf_data <- rbind(cpf_data_2023_4,cpf_data_2025)
 
 cpf_data <- as.data.table(cpf_data)
-str(cpf_data)
+#str(cpf_data)
 ```
 # Set Names
 ```{r}
@@ -102,26 +102,14 @@ cpf_data[is.na(`MRN`),]
 ```
 
 ```{r}
-p <- cpf_data %>%
-  ggplot(aes(x = Weight)) +
-  geom_histogram(aes(y = ..density..), 
-                 #bins = 10, 
-                 fill = "skyblue", 
-                 color = "white") +
-  geom_density(color = "darkblue", size = 1) +
-  labs(title = "Weight Distribution", 
-       x = "Weight (kg)", 
-       y = "Density") +
-  theme_minimal()
-
-ggplotly(p)
-```
-
-```{r}
 # count how many babies enrolled in 2024 - remember some don't have consent year in so check that as well
 # probably 2 more enrolled without a year in the cpf file
 count_2024 <- nrow(cpf_data[cpf_data$`Consent Year` == 2024 & !is.na(cpf_data$`Study number`), ])
 count_2024
+```
+
+```{r}
+
 ```
 
 ```{r}
