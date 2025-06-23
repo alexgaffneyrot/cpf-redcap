@@ -33,10 +33,10 @@ calculate_cga_discharge <- function(dob, ga_weeks, ga_days, discharge_date) {
 }
 
 ## Define the dob, dischage dates + GA 
-dob <- as.Date("14/10/2024", format="%d/%m/%Y")
-discharge <- as.Date("30/10/2024", format="%d/%m/%Y")
-ga_weeks <- 32
-ga_days <- 1
+dob <- as.Date("", format="%d/%m/%Y")
+discharge <- as.Date("", format="%d/%m/%Y")
+ga_weeks <- 
+ga_days <- 
 
 ## Chronological Age @ Discharge
 # Calculate the difference in days
