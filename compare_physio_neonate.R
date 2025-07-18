@@ -4,15 +4,18 @@ library(tibble)
 library(janitor)
 library(lubridate)
 
-neonate_data <- read_excel("/Users/AGaffney/Documents/Quarterly reports/Data/2025_Q1/01.01.2025  31.03.2025paeds opd clinic activity.xls", sheet = "Sheet1")
-physio_data <- read_excel("/Users/AGaffney/Documents/Quarterly reports/Data/2025_Q1/Physio  01.01.2025 31.03.2024.xls", sheet = "Sheet1")
+neonate_data <- read_excel("/Users/AGaffney/Documents/Quarterly report/01.04.2025  30.06.2025paeds11 opd clinic activity.xls", sheet = "Sheet1")
+physio_data <- read_excel("/Users/AGaffney/Documents/Quarterly report/Physio  01.04.2025 30.06.2025.xls", sheet = "Sheet1")
 # load cpf_data using clean_cpf_file.Rmd
+
+View(neonate_data)
+View(physio_data)
 
 # remove first x rows of data - NA
 neonate_data <- tail(neonate_data, -7)
 physio_data <- tail(physio_data, -2)
 
-#first row to colnames
+# first row to colnames
 neonate_data <- neonate_data %>%
   row_to_names(row_number = 1)
 
@@ -67,6 +70,11 @@ consented_infants <- cpf_data[!is.na(cpf_data$study_number), ]
 consented_infants <- consented_infants %>% select(study_number,mrn) %>% arrange(study_number)
 length(unique(consented_infants$mrn))
 
+
+# tolower names so they match
+colnames(neonate_data) <- tolower(colnames(neonate_data))
+colnames(physio_data) <- tolower(colnames(physio_data))
+
 ## Neonate consented
 neonate_consented <- neonate_data %>% inner_join(consented_infants, by = "mrn")
 length(unique(neonate_data$mrn))
@@ -78,31 +86,35 @@ length(unique(physio_data$mrn))
 length(unique(physio_consented$mrn))
 
 # Take only columns of importance - multiple with same column names
-neonate_sub <- neonate_consented %>% select(mrn, name, Date.of.Birth, CGA.Weeks, study_number)
-neonate_sub$CGA.Weeks <- as.numeric(neonate_sub$CGA.Weeks)
+neonate_sub <- neonate_consented %>% select(mrn, name, date.of.birth, cga.weeks, study_number)
+neonate_sub$cga.weeks <- as.numeric(neonate_sub$cga.weeks)
 
-physio_sub <- physio_consented %>% select(mrn, NAME, DOB, CGA.WEEKS, study_number)
-physio_sub$CGA.WEEKS <- as.numeric(physio_sub$CGA.WEEKS)
+physio_sub <- physio_consented %>% select(mrn, name, dob, cga.weeks, study_number)
+physio_sub$cga.weeks <- as.numeric(physio_sub$cga.weeks)
 
-physio_sub %>% filter(CGA.WEEKS >= 12 & CGA.WEEKS <= 20)
-neonate_sub %>% filter(CGA.Weeks >= 12 & CGA.Weeks <= 20)
+physio_sub %>% filter(cga.weeks >= 12 & cga.weeks <= 20)
+neonate_sub %>% filter(cga.weeks >= 12 & cga.weeks <= 20)
+
+# setnames for the join
+setnames(physio_sub, old = c("cga.weeks"), new = c("cga.weeks.physio"))
+setnames(neonate_sub, old = c("cga.weeks"), new = c("cga.weeks.neonate"))
 
 # Add a flag for "In Neonate" in the neonate dataframe
 neonate_sub <- neonate_sub %>%
-  mutate(Flag_Neonate = "1")
+  mutate(flag_neonate = "1")
 
 # Add a flag for "In Physio" in the physio dataframe
 physio_sub <- physio_sub %>%
-  mutate(Flag_Physio = "1")
+  mutate(flag_physio = "1")
 
 # Perform a full join on MRN and merge the flags
 joined_sub <- full_join(neonate_sub, physio_sub, by = "mrn") %>%
   mutate(
     # Create a final flag based on the presence of flags in both datasets
     Flag = case_when(
-      Flag_Neonate == "1" & !is.na(Flag_Physio) ~ "In both",  # If flag is "1" in both
-      Flag_Neonate == "1" & is.na(Flag_Physio) ~ "Only in Neonate",  # If only in Neonate
-      is.na(Flag_Neonate) & Flag_Physio == "1" ~ "Only in Physio",  # If only in Physio
+      flag_neonate == "1" & !is.na(flag_physio) ~ "In both",  # If flag is "1" in both
+      flag_neonate == "1" & is.na(flag_physio) ~ "Only in Neonate",  # If only in Neonate
+      is.na(flag_neonate) & flag_physio == "1" ~ "Only in Physio",  # If only in Physio
       TRUE ~ "Not in either"  # Shouldn't occur as it's a full join
     )
   )
@@ -114,7 +126,7 @@ joined_sub <- full_join(neonate_sub, physio_sub, by = "mrn") %>%
 
 
 ####### FOR JUST PHYSIO APPT BEING WITHIN 12-20 WEEK CGA AT APPT
-physio_CGA_12_20 <- joined_sub %>% filter(CGA.WEEKS >= 12 & CGA.WEEKS <= 20)
+physio_CGA_12_20 <- joined_sub %>% filter(cga.weeks.physio >= 12 & cga.weeks.physio <= 20)
 length(unique(physio_CGA_12_20$mrn))
 
 physio_CGA_12_20 %>%
@@ -129,7 +141,7 @@ physio_CGA_12_20 %>%
   unique() 
 
 ####### FOR JUST NEONATE APPT BEING WITHIN 12-20 WEEK CGA AT APPT
-neonate_CGA_12_20 <- joined_sub %>% filter(CGA.Weeks >= 12 & CGA.Weeks <= 20)
+neonate_CGA_12_20 <- joined_sub %>% filter(cga.weeks.neonate >= 12 & cga.weeks.neonate <= 20)
 length(unique(neonate_CGA_12_20$mrn))
 
 neonate_CGA_12_20 %>%
@@ -148,40 +160,39 @@ neonate_CGA_12_20 %>%
   pull(mrn) %>%
   unique() 
 
-#H04260447
-#H04260736
-
 ###### FOR EITHER NEONATE OR PHYSIO BEING WITHIN 12-20 WEEK CGA AT APPT
 joined_sub_filter_age <- joined_sub %>%
-  filter((CGA.Weeks >= 12 & CGA.Weeks <= 20) | (CGA.WEEKS >= 12 & CGA.WEEKS <= 20))
+  filter((cga.weeks.physio >= 12 & cga.weeks.physio <= 20) | (cga.weeks.neonate >= 12 & cga.weeks.neonate <= 20))
 length(unique(joined_sub_filter_age$mrn))
 
 physio_joined_sub_filter_age <- joined_sub_filter_age %>%
   filter(Flag %in% c("In both", "Only in Physio"))
 length(unique(physio_joined_sub_filter_age$mrn))
 
+physio_joined_sub_filter_age %>% select(study_number.x,study_number.y,name.x,name.y,mrn) %>% distinct()
+
 neonate_joined_sub_filter_age <- joined_sub_filter_age %>%
   filter(Flag %in% c("In both", "Only in Neonate"))
 length(unique(physio_joined_sub_filter_age$mrn))
 
+neonate_joined_sub_filter_age %>% select(study_number.x,study_number.y,name.x,name.y,mrn) %>% distinct()
 
 #################################################
-#   Calculate how many should be seen in Q1     #
+#   Calculate how many should be seen in Q      #
 #   12-16 weeks CGA for infants under 4 months  #
 #################################################
 
 ## PHYSIO
-
 # Define Q1 2025 date range
-q1_start <- as.Date("2025-01-01")
-q1_end   <- as.Date("2025-03-31")
+q1_start <- as.Date("2025-04-01")
+q1_end   <- as.Date("2025-06-30")
 
 # Look at all first - not just consented
 # DOB format
-cpf_data$DOB <- as.Date(as.numeric(cpf_data$DOB), origin = "1899-12-30")
+#cpf_data$dob <- as.Date(as.numeric(cpf_data$dob), origin = "1899-12-30")
 
 # format gestational age - get rid of days
-cpf_data$GA_Weeks <- sub("\\+.*", "", cpf_data$`GA at birth`)
+cpf_data$GA_Weeks <- sub("\\+.*", "", cpf_data$ga_at_birth)
 cpf_data$GA_Weeks <- as.numeric(cpf_data$GA_Weeks)
 
 # Step 1: Calculate corrected age offset (how many weeks premature)
@@ -190,14 +201,14 @@ CGA_cal <- cpf_data %>%
     prematurity_offset_weeks = 40 - GA_Weeks,
     
     # Step 2: Calculate the start and end of the 12–16 week corrected age window
-    CGA_12w_date = DOB + weeks(prematurity_offset_weeks + 12),
-    CGA_16w_date = DOB + weeks(prematurity_offset_weeks + 16),
+    CGA_12w_date = dob + weeks(prematurity_offset_weeks + 12),
+    CGA_16w_date = dob + weeks(prematurity_offset_weeks + 16),
     
     # Step 3: Check if this range overlaps with Q1 2025
     in_Q1_2025 = (CGA_12w_date <= q1_end) & (CGA_16w_date >= q1_start)
   )
 
-# Step 4: Filter infants whose 12–16 week corrected age window overlaps Q1 2025
+# Step 4: Filter infants whose 12–16 week corrected age window overlaps with quarter window
 infants_q1_12_16_cga <- CGA_cal %>% filter(in_Q1_2025)
 
 # View the results
@@ -214,7 +225,7 @@ physio_CGA_12_20_mrn <- unique(physio_CGA_12_20$mrn)
 # In both
 intersect(q1_12_16_cga_consented_mrn, physio_CGA_12_20_mrn)
 
-# only in physio - reason is because no DOB in CPF file
+# only in physio - seen at 2 and 7 weeks neonate
 setdiff(physio_CGA_12_20_mrn, q1_12_16_cga_consented_mrn)
 
 # only in cpf - haven't seen physio

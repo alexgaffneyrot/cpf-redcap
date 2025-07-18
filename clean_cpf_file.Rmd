@@ -16,12 +16,17 @@ library(ggplot2)
 # Read in data
 ```{r}
 # "C:\Users\AGaffney\Documents\CPF excel\CPF Study Data 2023_copy_2025_XXXXXX.xlsx"
-cpf_data_2023_4 <- read_excel("/Users/AGaffney/Documents/CPF excel/CPF Study Data 2023_copy_2025_June.xlsx", sheet = "2023-24")
-cpf_data_2025 <- read_excel("/Users/AGaffney/Documents/CPF excel/CPF Study Data 2023_copy_2025_June.xlsx", sheet = "2025")
-cpf_data <- rbind(cpf_data_2023_4,cpf_data_2025)
+cpf_data_2023_4 <- read_excel("/Users/AGaffney/Documents/CPF excel/CPF Study Data 2023_copy_2025_July.xlsx", sheet = "2023-24")
+cpf_data_2025 <- read_excel("/Users/AGaffney/Documents/CPF excel/CPF Study Data 2023_copy_2025_July.xlsx", sheet = "2025")
+hrcpcp_updated <- read_excel("/Users/AGaffney/Documents/CPF excel/CPF Study Data 2023_copy_2025_July.xlsx", sheet = "HRCPCP Updated")
+#setdiff(names(cpf_data_2023_4), names(cpf_data_2025))
+#names(cpf_data_2023_4)
+#names(cpf_data_2025)
 
+cpf_data <- rbind(cpf_data_2023_4,cpf_data_2025)
 cpf_data <- as.data.table(cpf_data)
-#str(cpf_data)
+hrcpcp_updated <- as.data.table(hrcpcp_updated)
+
 ```
 # Set Names
 ```{r}
@@ -71,6 +76,7 @@ setnames(cpf_data, old = colnames(cpf_data), new = c(
 cpf_data[, `:=`(
   consent = as.factor(consent),
   consent_month = factor(consent_month, levels = month.abb),
+  dob = as.Date(as.POSIXct(as.numeric(dob)), origin = "1899-12-30", tz = "Europe/Dublin"),
   birth_weight = as.numeric(gsub("kg|g", "", tolower(birth_weight))),
   hrcp_diagnosis = as.factor(hrcp_diagnosis),
   hrcp_diagnosis_date = as.Date(hrcp_diagnosis_date),
@@ -81,6 +87,18 @@ cpf_data[, `:=`(
 
 # Problems
 ```{r}
+# Step 1: Convert back to numeric (remove Date class)
+cpf_data$dob_fixed <- as.numeric(cpf_data$dob)
+
+# Step 2: Convert properly using the Excel origin
+cpf_data$dob_fixed <- as.Date(cpf_data$dob_fixed, origin = "1899-12-30")
+
+
+
+
+
+
+
 # Consent 'Yes' but no consent month or year
 cpf_data[consent == "Yes" & (is.na(consent_month)| is.na(consent_year)),]
 ```
@@ -109,11 +127,75 @@ count_2024
 ```
 
 ```{r}
+# OOA stats
+cpf_data[, dob_year := year(dob)]
+dim(cpf_data)
+View(cpf_data)
+
+dat_2024 <- cpf_data[cpf_data$dob_year == 2024]
+
+# ---- 1. Total infants born in 2024 and 2025 ----
+total_by_year <- cpf_data[dob_year %in% c(2023, 2024, 2025), .N, by = dob_year][order(dob_year)]
+# ---- 2. Outborn infants only ----
+outborn_by_year <- cpf_data[consent == "Outborn" & dob_year %in% c(2023, 2024, 2025), .N, by = dob_year][order(dob_year)]
+
+# ---- 3. Merge and calculate rates ----
+outborn_stats <- merge(total_by_year, outborn_by_year, by = "dob_year", all.x = TRUE)
+setnames(outborn_stats, c("dob_year", "total", "outborn"))
+outborn_stats[is.na(outborn), outborn := 0]
+outborn_stats[, outborn_rate := round(100 * outborn / total, 1)]  # as percentage
+
+print(outborn_stats)
+
+clip_text <- outborn_stats[, .(Year = dob_year,
+                               Total = total,
+                               OOA = outborn,
+                               `Percent OOA` = paste0(outborn_rate, "%"))]
+
+# Copy to clipboard 
+write.table(clip_text, "clipboard", sep = "\t", row.names = FALSE)
 
 ```
 
 ```{r}
+outborn <- cpf_data[cpf_data$consent == "Outborn"] 
+dim(outborn)
 
+# Standardize and clean the consent_comment column (in-place)
+outborn[, consent_comment_clean := str_trim(consent_comment)]  # trim whitespace
+outborn[, consent_comment_clean := str_to_title(consent_comment_clean)]  # proper case
+
+# Fix inconsistencies and standardize hospital names
+outborn[consent_comment_clean %in% c("Olol", "Olol Drogheda"), consent_comment_clean := "OLOL"]
+outborn[consent_comment_clean %in% c("Killkenny"), consent_comment_clean := "Kilkenny"]
+outborn[consent_comment_clean %in% c("T/T Temple St", "Temple St/Cdnt"), consent_comment_clean := "Temple St"]
+outborn[consent_comment_clean == "Booked Galway", consent_comment_clean := "Galway"]
+#outborn[consent_comment_clean == "Rip -  Portlaoise", consent_comment_clean := "Portlaoise"]
+#outborn[consent_comment_clean == "Letterkenny Rip", consent_comment_clean := "Letterkenny"]
+
+# Replace multiple patterns with "Unknown"
+patterns <- c("rip", "foster", "dna", "enable ireland", "moving to canada", "f/u usa","Out Of Country","Nmh/Cdnt")
+
+outborn[grepl(paste(patterns, collapse = "|"), consent_comment_clean, ignore.case = TRUE),
+       consent_comment_clean := "Unknown"]
+
+
+# View cleaned levels
+sort(unique(outborn$consent_comment_clean))
+
+
+
+# Tabulate frequencies — include NAs
+consent_summary <- outborn[, .N, by = consent_comment_clean][order(-N)]
+
+print(consent_summary)
+
+
+clip_text <- consent_summary[, .(Area = consent_comment_clean,
+                               Count = N)]
+
+# Copy to clipboard (Windows)
+write.table(clip_text, "clipboard", sep = "\t", row.names = FALSE)
 ```
 
 ```{r}

@@ -35,6 +35,6 @@ calculate_cga <- function(dob, ga_weeks, ga_days, appointment_date) {
 }
 
 # dob, weeks, days, appointment date
-calculate_cga("28/12/2024",30,1,"19/06/2025")
+calculate_cga("22/10/2023",35,4,"21/02/2024")
 
 
